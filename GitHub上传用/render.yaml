@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: kol-mail-system
+    runtime: python
+    plan: free
+    # 本系统零依赖，不用装任何包，所以构建步骤什么都不做。
+    buildCommand: "true"
+    startCommand: python server/app.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: KOL_HOST
+        value: 0.0.0.0

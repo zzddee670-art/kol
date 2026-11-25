@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KOL 红人邮件系统</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --line:#dbe2ea;
+      --text:#132238;
+      --muted:#607086;
+      --accent:#0f766e;
+      --accent-2:#1d4ed8;
+      --warn:#b45309;
+      --bad:#b91c1c;
+      --good:#166534;
+      --shadow:0 1px 3px rgba(15,23,42,.08);
+      --radius:10px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font:14px/1.5 "Segoe UI", Arial, sans-serif;
+    }
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:18px 24px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(8px);
+      position:sticky;
+      top:0;
+      z-index:5;
+    }
+    h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:0;
+    }
+    main{
+      padding:20px;
+      display:grid;
+      gap:16px;
+      grid-template-columns:1.1fr .9fr;
+    }
+    section{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    section h2{
+      margin:0 0 12px;
+      font-size:15px;
+    }
+    .full{grid-column:1 / -1}
+    .grid{
+      display:grid;
+      gap:12px;
+    }
+    .grid.two{grid-template-columns:1fr 1fr}
+    .grid.three{grid-template-columns:repeat(3,1fr)}
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px;
+    }
+    input, textarea, select, button{
+      font:inherit;
+    }
+    input, textarea, select{
+      width:100%;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      background:#fff;
+      padding:6px 8px;
+      color:#222;
+      font-size:13px;
+    }
+    input:focus, textarea:focus, select:focus{
+      outline:none;
+      border-color:#4a90d9;
+      box-shadow:0 0 0 1px #4a90d9;
+    }
+    textarea{
+      min-height:120px;
+      resize:vertical;
+      font-family:inherit;
+    }
+    .toolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    button{
+      border:1px solid #888;
+      border-radius:3px;
+      padding:7px 12px;
+      cursor:pointer;
+      background:#f0f0f0;
+      color:#222;
+      font-size:13px;
+    }
+    button:hover{background:#e5e5e5}
+    button:active{background:#d9d9d9}
+    button.primary{background:#0f766e;color:#fff;border-color:#0c5e57}
+    button.primary:hover{background:#0c5e57}
+    button.blue{background:#1d4ed8;color:#fff;border-color:#17399f}
+    button.blue:hover{background:#17399f}
+    button.danger{background:#fee2e2;color:#b91c1c;border-color:#e5a0a0}
+    button.ghost{background:#f0f0f0;border-color:#888}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .statbar{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;
+    }
+    .stat{
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:8px;
+      padding:10px;
+    }
+    .stat .k{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .stat .v{
+      font-size:22px;
+      font-weight:700;
+      margin-top:2px;
+    }
+    .tablewrap{
+      overflow:auto;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      max-height:520px;
+      background:#fff;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:980px;
+    }
+    th, td{
+      border-bottom:1px solid #e0e0e0;
+      border-right:1px solid #e0e0e0;
+      padding:6px 8px;
+      text-align:left;
+      vertical-align:top;
+      font-size:12px;
+    }
+    th{
+      position:sticky;
+      top:0;
+      background:#e8e8e8;
+      z-index:1;
+      color:#333;
+      font-weight:600;
+      border-bottom:1px solid #b0b0b0;
+    }
+    th:last-child, td:last-child{border-right:0}
+    tr:hover{background:#f5f5f5}
+    tr.active{background:#f0fff0}      /* Honeydew - 已检查 */
+    tr.blocked{background:#ffe4b5}    /* Moccasin - 已拦截 */
+    tr.sent{background:#f0f8ff}       /* AliceBlue - 已发送 */
+    .pill{
+      display:inline-block;
+      border-radius:999px;
+      padding:3px 8px;
+      font-size:12px;
+      background:#eef2ff;
+      color:#3730a3;
+    }
+    .pill.sent{background:#dcfce7;color:var(--good)}
+    .pill.blocked{background:#ffedd5;color:var(--warn)}
+    .pill.new{background:#e2e8f0;color:#334155}
+    .pill.previewed{background:#dbeafe;color:#1d4ed8}
+    .small{color:var(--muted);font-size:12px}
+    .row-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+    .preview{
+      white-space:pre-wrap;
+      background:#0f172a;
+      color:#e2e8f0;
+      border-radius:8px;
+      padding:12px;
+      min-height:180px;
+      overflow:auto;
+    }
+    .warn{
+      color:var(--warn);
+      font-size:12px;
+      margin-top:6px;
+    }
+    .error{
+      color:var(--bad);
+      font-size:12px;
+    }
+    .split{
+      display:grid;
+      gap:12px;
+      grid-template-columns:1fr 1fr;
+    }
+    .muted-box{
+      border:1px dashed var(--line);
+      background:#fbfdff;
+      padding:10px;
+      border-radius:8px;
+    }
+    @media (max-width:1200px){
+      main{grid-template-columns:1fr}
+      .statbar{grid-template-columns:repeat(2,1fr)}
+      .grid.two,.grid.three,.split{grid-template-columns:1fr}
+    }
+    body{
+      background:#f0f0f0;
+      font-family:"Microsoft YaHei UI","Microsoft YaHei","Segoe UI",sans-serif;
+      color:#202020;
+    }
+    .app-header{
+      height:48px;
+      padding:0 14px;
+      background:#f5f5f5;
+      border-bottom:1px solid #c9c9c9;
+      box-shadow:none;
+      position:static;
+      backdrop-filter:none;
+    }
+    .app-header h1{font-size:17px;font-weight:600}
+    .app-main{
+      display:block;
+      padding:7px 9px 9px;
+      max-width:none;
+    }
+    .stats-section{
+      padding:0;
+      margin:0 0 6px;
+      background:transparent;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+    }
+    .statbar{
+      display:flex;
+      gap:0;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+    }
+    .stat{
+      min-width:150px;
+      height:56px;
+      background:#fff;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      padding:6px 12px;
+      margin-right:12px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .stat .k{font-size:12px;color:#555;line-height:1.2}
+    .stat .v{font-size:20px;font-weight:700;margin-top:2px;line-height:1.2;font-family:"Segoe UI",sans-serif}
+    .workspace{
+      display:grid;
+      grid-template-columns:minmax(0,1.65fr) minmax(360px,.95fr);
+      gap:8px;
+      height:calc(100vh - 126px);
+      min-height:560px;
+    }
+    .left-workspace{
+      min-width:0;
+      min-height:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      box-shadow:none;
+      background:#fff;
+    }
+    .tab-strip{
+      display:flex;
+      gap:1px;
+      flex:0 0 36px;
+      padding:4px 4px 0;
+      background:#e8e8e8;
+      border-bottom:1px solid #b0b0b0;
+    }
+    .tab-button{
+      min-width:80px;
+      padding:5px 14px;
+      border:1px solid #b0b0b0;
+      border-bottom:0;
+      border-radius:3px 3px 0 0;
+      background:#dcdcdc;
+      color:#333;
+      font-size:13px;
+    }
+    .tab-button:hover{background:#e8e8e8}
+    .tab-button.active{
+      background:#fff;
+      border-color:#b0b0b0;
+      position:relative;
+      top:1px;
+      font-weight:600;
+      color:#000;
+    }
+    .tab-page{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding:8px;
+      background:#fff;
+    }
+    .tab-page[hidden]{display:none}
+    .page-group{
+      position:relative;
+      height:100%;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      padding:14px 12px 12px;
+      background:#fff;
+      box-shadow:none;
+      display:flex;
+      flex-direction:column;
+      box-sizing:border-box;
+    }
+    .page-group>h2{
+      position:absolute;
+      top:-9px;
+      left:10px;
+      margin:0;
+      padding:0 6px;
+      font-size:13px;
+      font-weight:600;
+      color:#222;
+      background:#f0f0f0;
+      line-height:1;
+    }
+    .page-group>h2 .small{font-weight:400;color:#555;font-size:12px}
+    .template-picker{
+      display:grid;
+      grid-template-columns:70px minmax(160px,1fr) 105px 105px;
+      gap:7px;
+      margin-bottom:14px;
+      flex-shrink:0;
+    }
+    .template-picker label{
+      align-self:center;
+      margin:0;
+      font-size:13px;
+      color:#333;
+    }
+    .template-rules{
+      display:grid;
+      grid-template-columns:1.1fr 1fr 1.1fr 1fr 1fr;
+      gap:9px;
+      margin-bottom:12px;
+      flex-shrink:0;
+    }
+    .template-rules label,.template-content label,.sender-grid label,.file-field label{
+      font-size:12px;
+      color:#444;
+      margin-bottom:4px;
+    }
+    .template-content{
+      display:grid;
+      grid-template-rows:auto minmax(180px,1fr) auto;
+      gap:10px;
+      flex:1;
+      min-height:0;
+    }
+    .body-field{display:flex;flex-direction:column;min-height:180px}
+    .body-field textarea{flex:1;min-height:160px;font-family:inherit}
+    .template-actions{gap:7px}
+    .template-actions .small{flex-basis:100%;margin-top:1px}
+    .import-row{
+      display:grid;
+      grid-template-columns:minmax(180px,1.2fr) minmax(200px,1fr) 110px;
+      align-items:end;
+      gap:10px;
+      margin-top:8px;
+    }
+    .file-field input{padding:7px}
+    .import-button{height:38px}
+    .import-note{margin-top:16px;line-height:1.8}
+    .sender-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px 16px;
+      max-width:900px;
+    }
+    .check-field{
+      display:flex!important;
+      align-items:center;
+      gap:8px;
+      align-self:end;
+      min-height:38px;
+      margin:0!important;
+      font-size:13px!important;
+    }
+    .check-field input,.check-col input{width:auto}
+    .sender-actions{margin-top:18px}
+    .leads-page,.logs-page{display:flex;flex-direction:column}
+    .lead-toolbar{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      flex-wrap:wrap;
+      padding-bottom:8px;
+    }
+    .lead-toolbar input{max-width:260px}
+    .selected-count{margin-left:auto}
+    .lead-table-wrap,.logs-table-wrap{
+      flex:1;
+      max-height:none;
+      min-height:260px;
+      border-radius:2px;
+    }
+    .lead-table-wrap table{min-width:1500px}
+    .logs-table-wrap table{min-width:780px}
+    th,td{padding:7px 8px;font-size:12px}
+    th{background:#f0f0f0}
+    .right-column{
+      display:grid;
+      grid-template-rows:260px minmax(0,1fr);
+      gap:8px;
+      min-width:0;
+      min-height:0;
+    }
+    /* GroupBox 样式：还原 WinForms 分组框（带标题的边框） */
+    .group-box{
+      position:relative;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      padding:14px 10px 10px;
+      background:#fff;
+      min-height:0;
+      overflow:auto;
+    }
+    .group-box>h2{
+      position:absolute;
+      top:-9px;
+      left:10px;
+      margin:0;
+      padding:0 6px;
+      font-size:13px;
+      font-weight:600;
+      color:#222;
+      background:#f0f0f0;
+      line-height:1;
+    }
+    .group-box>h2 .small{font-weight:400;color:#555;font-size:12px}
+    .action-box{overflow:hidden}
+    .action-layout{
+      display:grid;
+      grid-template-rows:28px 38px 42px 42px 24px 24px 1fr;
+      gap:0;
+      height:100%;
+    }
+    .action-intro{
+      font-size:12px;
+      color:#696969;
+      margin:0;
+      display:flex;
+      align-items:center;
+    }
+    .action-buttons{
+      display:grid;
+      grid-template-columns:42% 58%;
+      gap:6px;
+      align-self:stretch;
+    }
+    .action-buttons button{height:100%;padding:0 8px;font-size:13px}
+    .send-btn-full{
+      width:100%;
+      height:100%;
+      padding:0;
+      font-size:13px;
+      border:1px solid #888;
+    }
+    .send-selected{background:#98fb98;color:#000}
+    .send-all{background:#ffe4e1;color:#000}
+    .safety-note{
+      font-size:11px;
+      color:#006400;
+      margin:0;
+      display:flex;
+      align-items:center;
+    }
+    /* 预览区：严格按原版 TableLayoutPanel 4行2列布局 */
+    .preview-box{
+      display:grid;
+      grid-template-columns:70px 1fr;
+      grid-template-rows:40px 40px minmax(0,1fr) 92px;
+      gap:0;
+      padding:14px 10px 10px;
+      overflow:hidden;
+    }
+    .preview-box>.preview-label{
+      display:flex;
+      align-items:center;
+      font-size:13px;
+      color:#222;
+    }
+    .preview-box>.preview-content{
+      display:flex;
+      align-items:center;
+      min-width:0;
+    }
+    .preview-box>.preview-content.full-row{grid-column:2}
+    .preview-subject{
+      width:100%;
+      min-height:30px;
+      background:#fff;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      padding:4px 6px;
+      font-size:13px;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .preview-body-field{
+      grid-column:2;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .preview{
+      flex:1;
+      min-height:0;
+      background:#fff;
+      color:#222;
+      border:1px solid #b0b0b0;
+      border-radius:2px;
+      padding:6px 8px;
+      font-family:"Consolas","Microsoft YaHei UI",monospace;
+      font-size:13px;
+      overflow:auto;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .preview-check-area{
+      grid-column:2;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      padding-top:6px;
+    }
+    .preview-check-label{
+      grid-column:1;
+      display:flex;
+      align-items:flex-start;
+      padding-top:10px;
+      font-size:13px;
+      color:#222;
+    }
+    .preview-button{
+      width:150px;
+      height:34px;
+      flex-shrink:0;
+      font-size:13px;
+    }
+    .preview-warn{
+      font-size:12px;
+      color:#ff8c00;
+      margin:0;
+      min-height:18px;
+      word-break:break-word;
+    }
+    .row-actions{gap:4px}
+    .row-actions button{padding:5px 7px;font-size:12px}
+    @media (max-width:1150px){
+      .workspace{grid-template-columns:minmax(0,1fr) 360px}
+      .template-rules{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .template-rules>div:first-child{grid-column:1/-1}
+    }
+    @media (max-width:850px){
+      .workspace{height:auto;min-height:0;grid-template-columns:1fr}
+      .left-workspace{min-height:540px}
+      .right-column{grid-template-rows:auto minmax(440px,1fr)}
+      .action-box{min-height:240px}
+      .tab-strip{overflow-x:auto}
+      .tab-button{min-width:max-content}
+    }
+    @media (max-width:600px){
+      .template-picker{grid-template-columns:60px 1fr}
+      .template-rules,.sender-grid,.import-row{grid-template-columns:1fr}
+      .template-rules>div:first-child{grid-column:auto}
+      .stat{min-width:112px}
+      .lead-toolbar input{max-width:none;flex:1 1 100%}
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>KOL 红人邮件系统</h1>
+    <button class="ghost" id="refreshBtn">刷新数据</button>
+  </header>
+
+  <main class="app-main">
+    <section class="stats-section">
+      <div class="statbar" id="stats"></div>
+    </section>
+
+    <div class="workspace">
+      <section class="left-workspace">
+        <nav class="tab-strip" role="tablist" aria-label="系统功能">
+          <button class="tab-button active" data-tab="templateTab" role="tab">邮件模板</button>
+          <button class="tab-button" data-tab="importTab" role="tab">导入名单</button>
+          <button class="tab-button" data-tab="senderTab" role="tab">邮箱设置</button>
+          <button class="tab-button" data-tab="leadsTab" role="tab">红人名单</button>
+          <button class="tab-button" data-tab="logsTab" role="tab">日志</button>
+        </nav>
+
+        <div class="tab-page active" id="templateTab" role="tabpanel">
+          <section class="page-group">
+            <h2>邮件模板库 <span class="small">（可按国家 / 语种 / 平台自动匹配）</span></h2>
+            <div class="template-picker toolbar">
+              <label for="templateSelect">模板</label>
+              <select id="templateSelect"></select>
+              <button class="ghost" id="newTemplateBtn">新建模板</button>
+              <button class="danger" id="deleteTemplateBtn">删除模板</button>
+            </div>
+            <div class="template-rules">
+              <div><label for="templateName">模板名称</label><input id="templateName"></div>
+              <div><label for="templateCountry">国家/地区</label><input id="templateCountry"></div>
+              <div><label for="templateCreatorType">博主类型</label><input id="templateCreatorType"></div>
+              <div><label for="templateLanguage">语种/语言</label><input id="templateLanguage"></div>
+              <div><label for="templatePlatform">平台/站点</label><input id="templatePlatform"></div>
+            </div>
+            <div class="template-content">
+              <div><label for="subject">标题</label><input id="subject" placeholder="例如：合作邀约 - {{name}}"></div>
+              <div class="body-field">
+                <label for="body">正文</label>
+                <textarea id="body" placeholder="在这里编辑邮件正文"></textarea>
+              </div>
+              <div class="toolbar template-actions">
+                <button class="primary" id="saveTemplateBtn">保存当前模板</button>
+                <button class="ghost" id="boldBtn">加粗选中文字</button>
+                <button class="ghost" id="normalBtn">取消加粗</button>
+                <button class="ghost" id="insertNameBtn">插入红人姓名</button>
+                <span class="small">可用占位符：{{name}}、{{email}}、{{profileUrl}}；其他表格列也可用 {{列名}}。</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-page" id="importTab" role="tabpanel" hidden>
+          <section class="page-group">
+            <h2>导入名单</h2>
+            <div class="import-row">
+              <div class="file-field">
+                <label for="fileInput">名单文件（Excel / CSV / TSV）</label>
+                <input id="fileInput" type="file" accept=".csv,.tsv,.xlsx,.xlsm,.xls" />
+              </div>
+              <div>
+                <label for="replaceMode">导入方式</label>
+                <select id="replaceMode">
+                  <option value="append">追加名单（相同邮箱则更新）</option>
+                  <option value="replace">清空旧名单后导入</option>
+                </select>
+              </div>
+              <button class="primary import-button" id="importBtn">开始导入</button>
+            </div>
+            <div class="muted-box import-note">
+              支持 .xlsx、.xlsm、.csv、.tsv。Excel 读取第一个工作表；至少需要包含红人邮箱列。导入后可在「红人名单」页签检查结果。
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-page" id="senderTab" role="tabpanel" hidden>
+          <section class="page-group">
+            <h2>发件邮箱设置 <span class="small">（每位红人单独发送一封）</span></h2>
+            <div class="sender-grid">
+              <div><label for="fromName">发件人名称</label><input id="fromName"></div>
+              <div><label for="fromEmail">发件邮箱</label><input id="fromEmail" type="email"></div>
+              <div><label for="replyTo">回复邮箱</label><input id="replyTo" type="email"></div>
+              <div><label for="smtpHost">SMTP 服务器</label><input id="smtpHost" placeholder="例如 smtp.gmail.com"></div>
+              <div><label for="username">账号</label><input id="username" autocomplete="username"></div>
+              <div><label for="password">授权码 / 密码</label><input id="password" type="password" autocomplete="new-password"></div>
+              <div><label for="smtpPort">SMTP 端口</label><input id="smtpPort" type="number" min="1" max="65535"></div>
+              <div><label for="dailyLimit">每日发送上限</label><input id="dailyLimit" type="number" min="0"></div>
+              <div><label for="delaySeconds">每封间隔秒数</label><input id="delaySeconds" type="number" min="0"></div>
+              <label class="check-field"><input id="useSsl" type="checkbox"> 使用 SSL 加密</label>
+            </div>
+            <div class="toolbar sender-actions">
+              <button class="primary" id="saveSettingsBtn">保存邮箱设置</button>
+              <span class="small">邮箱授权码只在当前运行期间使用，不会保存到文件。</span>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-page leads-page" id="leadsTab" role="tabpanel" hidden>
+          <div class="lead-toolbar">
+            <input id="filterInput" placeholder="搜索姓名、邮箱、平台、备注">
+            <button class="ghost" id="selectUnsentTableBtn">选择未发送</button>
+            <button class="ghost" id="selectAllBtn">全选名单</button>
+            <button class="ghost" id="clearSelBtn">取消选择</button>
+            <button class="ghost" id="resetSelectedBtn">重置选中</button>
+            <button class="danger" id="deleteSelectedBtn">删除选中</button>
+            <span class="small selected-count" id="selectedCount">已选择 0 个</span>
+          </div>
+          <div class="tablewrap lead-table-wrap">
+            <table>
+              <thead><tr>
+                <th class="check-col"><input id="selectAllVisible" type="checkbox" aria-label="全选当前显示"></th>
+                <th>红人姓名</th><th>邮箱</th><th>主页链接</th><th>平台</th><th>匹配模板</th>
+                <th>状态</th><th>备注</th><th>额外字段</th><th>未替换内容</th><th>发送时间</th><th>错误原因</th><th>来源文件</th><th>操作</th>
+              </tr></thead>
+              <tbody id="leadRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-page logs-page" id="logsTab" role="tabpanel" hidden>
+          <div class="tablewrap logs-table-wrap">
+            <table>
+              <thead><tr>
+                <th>时间</th><th>动作</th><th>状态</th><th>红人姓名</th><th>邮箱</th><th>说明</th>
+              </tr></thead>
+              <tbody id="logRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right-column">
+        <section class="action-box group-box">
+          <h2>发送操作 <span class="small">（独立一人一封）</span></h2>
+          <div class="action-layout">
+            <p class="action-intro">先检查，再发送。发送时每个红人都是单独一封邮件。</p>
+            <div class="action-buttons">
+              <button class="ghost" id="selectUnsentBtn">选择未发送</button>
+              <button class="blue" id="dryRunBtn">检查勾选但不发送</button>
+            </div>
+            <button class="send-btn-full send-selected" id="sendSelectedBtn">发送勾选的红人</button>
+            <button class="send-btn-full send-all" id="sendAllBtn">发送所有未发送红人</button>
+            <p class="safety-note">绿色按钮：只发你表格里选中的行。</p>
+            <p class="safety-note">浅红按钮：发所有还没发送过的行。</p>
+            <div></div>
+          </div>
+        </section>
+
+        <section class="preview-box group-box">
+          <h2>邮件预览 <span class="small">（一人一封，不是群发）</span></h2>
+          <div class="preview-label">红人</div>
+          <div class="preview-content"><select id="leadSelect"></select></div>
+          <div class="preview-label">标题</div>
+          <div class="preview-content"><div id="previewSubject" class="preview-subject"></div></div>
+          <div class="preview-label">正文</div>
+          <div class="preview-body-field"><div id="previewBody" class="preview"></div></div>
+          <div class="preview-check-label">检查</div>
+          <div class="preview-check-area">
+            <button class="ghost preview-button" id="previewBtn">刷新预览</button>
+            <p id="tokenWarn" class="preview-warn">请先导入名单</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const state = {
+      data: null,
+      selected: new Set(),
+      activeLeadId: null,
+      activeTemplateId: '__default',
+      filter: ''
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function esc(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function selectedLeads() {
+      const leads = state.data?.leads ?? [];
+      return leads.filter(l => state.selected.has(l.id));
+    }
+    function visibleLeads() {
+      const leads = state.data?.leads ?? [];
+      const f = state.filter.trim().toLowerCase();
+      if (!f) return leads;
+      return leads.filter(l => [
+        l.name, l.email, l.profileUrl, l.platform, l.templateName, l.note,
+        l.extraFields, l.status, l.lastError, l.sourceFile
+      ].join(' ').toLowerCase().includes(f));
+    }
+
+    function statusLabel(status) {
+      return ({
+        new: '未发送',
+        previewed: '已检查',
+        sent: '已发送',
+        blocked: '已拦截',
+        failed: '失败',
+        error: '错误',
+        ok: '成功'
+      })[status] || status || '未发送';
+    }
+
+    function actionLabel(action) {
+      return ({
+        import: '导入名单',
+        preview: '检查邮件',
+        dry_run: '模拟发送',
+        send: '发送邮件',
+        delete: '删除红人',
+        reset: '重置状态',
+        template: '保存模板',
+        settings: '保存邮箱设置'
+      })[action] || action || '';
+    }
+
+    function renderStats() {
+      const stats = state.data?.stats ?? {};
+      const items = [
+        ['总名单', stats.total ?? 0],
+        ['已发送', stats.sent ?? 0],
+        ['未发送', stats.ready ?? 0],
+        ['已拦截', stats.blocked ?? 0],
+        ['今日已发', stats.todaySent ?? 0]
+      ];
+      $('stats').innerHTML = items.map(([k, v]) => `<div class="stat"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+    }
+
+    function renderTemplate() {
+      if (!state.data) return;
+      const templates = state.data.templates ?? [];
+      const choices = [
+        {id: '__default', name: '默认模板（没有匹配时使用）'},
+        ...templates.map(t => ({id: t.id, name: t.name || '未命名模板'}))
+      ];
+      if (state.activeTemplateId !== '__default' && !templates.some(t => t.id === state.activeTemplateId)) {
+        state.activeTemplateId = '__default';
+      }
+      $('templateSelect').innerHTML = choices.map(t =>
+        `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+      $('templateSelect').value = state.activeTemplateId;
+      const isDefault = state.activeTemplateId === '__default';
+      const template = isDefault
+        ? (state.data.template ?? {})
+        : (templates.find(t => t.id === state.activeTemplateId) ?? {});
+      $('templateName').value = isDefault ? '默认模板' : (template.name ?? '');
+      $('templateCountry').value = template.country ?? '';
+      $('templateCreatorType').value = template.creatorType ?? '';
+      $('templateLanguage').value = template.language ?? '';
+      $('templatePlatform').value = template.platform ?? '';
+      ['templateName', 'templateCountry', 'templateCreatorType', 'templateLanguage', 'templatePlatform']
+        .forEach(id => { $(id).disabled = isDefault; });
+      $('deleteTemplateBtn').disabled = isDefault;
+      $('subject').value = template.subject ?? '';
+      $('body').value = template.body ?? '';
+    }
+
+    function renderSettings() {
+      if (!state.data) return;
+      const s = state.data.settings ?? {};
+      $('fromName').value = s.fromName ?? '';
+      $('fromEmail').value = s.fromEmail ?? '';
+      $('replyTo').value = s.replyTo ?? '';
+      $('smtpHost').value = s.smtpHost ?? '';
+      $('smtpPort').value = s.smtpPort ?? 587;
+      $('username').value = s.username ?? '';
+      $('password').value = '';
+      $('password').placeholder = s.passwordSet ? '已设置（留空表示不修改）' : '';
+      $('useSsl').checked = !!s.useSsl;
+      $('dailyLimit').value = s.dailyLimit ?? 40;
+      $('delaySeconds').value = s.delaySeconds ?? 5;
+    }
+
+    function renderLeadSelect() {
+      const leads = visibleLeads();
+      const options = leads.map(l => `<option value="${esc(l.id)}">${esc(l.name || l.email || l.id)}</option>`).join('');
+      $('leadSelect').innerHTML = options || '<option value="">暂无红人，请先导入名单</option>';
+      if (!state.activeLeadId && leads[0]) state.activeLeadId = leads[0].id;
+      if (state.activeLeadId && !leads.find(l => l.id === state.activeLeadId)) {
+        state.activeLeadId = leads[0]?.id ?? null;
+      }
+      $('leadSelect').value = state.activeLeadId || '';
+    }
+
+    function renderLeads() {
+      const rows = visibleLeads();
+      $('leadRows').innerHTML = rows.map(l => {
+        const unresolved = Array.isArray(l.unresolved) ? l.unresolved : [];
+        const cls = l.status === 'sent' ? 'sent' : (l.status === 'blocked' ? 'blocked' : (l.status === 'previewed' ? 'active' : ''));
+        return `
+          <tr class="${cls}" data-id="${esc(l.id)}">
+            <td class="check-col"><input type="checkbox" class="lead-check" data-id="${esc(l.id)}" ${state.selected.has(l.id) ? 'checked' : ''}></td>
+            <td>${esc(l.name)}</td>
+            <td>${esc(l.email)}</td>
+            <td>${esc(l.profileUrl)}</td>
+            <td>${esc(l.platform)}</td>
+            <td>${esc(l.templateName)}</td>
+            <td><span class="pill ${esc(l.status || 'new')}">${esc(statusLabel(l.status))}</span></td>
+            <td>${esc(l.note)}</td>
+            <td>${esc(l.extraFields)}</td>
+            <td class="${unresolved.length ? 'error' : ''}">${esc(unresolved.join(', '))}</td>
+            <td>${esc(l.sentAt)}</td>
+            <td class="${l.lastError ? 'error' : ''}">${esc(l.lastError)}</td>
+            <td>${esc(l.sourceFile)}</td>
+            <td>
+              <div class="row-actions">
+                <button class="ghost" data-action="preview" data-id="${esc(l.id)}">预览</button>
+                <button class="ghost" data-action="reset" data-id="${esc(l.id)}">重置</button>
+                <button class="danger" data-action="delete" data-id="${esc(l.id)}">删除</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      $('selectedCount').textContent = `已选择 ${state.selected.size} 个`;
+      $('selectAllVisible').checked = rows.length > 0 && rows.every(l => state.selected.has(l.id));
+      renderLeadSelect();
+    }
+
+    function renderLogs() {
+      const logs = state.data?.logs ?? [];
+      $('logRows').innerHTML = logs.slice().reverse().map(l => `
+        <tr>
+          <td>${esc(l.at)}</td>
+          <td>${esc(actionLabel(l.action))}</td>
+          <td><span class="pill ${esc(l.status || 'new')}">${esc(statusLabel(l.status))}</span></td>
+          <td>${esc(l.name)}</td>
+          <td>${esc(l.email)}</td>
+          <td>${esc(l.message)}</td>
+        </tr>`).join('');
+    }
+
+    function currentLeadId() {
+      return $('leadSelect').value || state.activeLeadId;
+    }
+
+    async function refreshState() {
+      const res = await fetch('/api/state');
+      state.data = await res.json();
+      renderStats();
+      renderTemplate();
+      renderSettings();
+      renderLeads();
+      renderLogs();
+      await refreshPreview();
+    }
+
+    async function saveTemplate(showNotice = true) {
+      const payload = {
+        templateId: state.activeTemplateId,
+        name: $('templateName').value,
+        country: $('templateCountry').value,
+        creatorType: $('templateCreatorType').value,
+        language: $('templateLanguage').value,
+        platform: $('templatePlatform').value,
+        subject: $('subject').value,
+        body: $('body').value
+      };
+      const res = await fetch('/api/templates/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        if (showNotice) alert(data.error || '模板保存失败。');
+        return false;
+      }
+      await refreshState();
+      if (showNotice) alert('模板已保存。');
+      return true;
+    }
+
+    async function createTemplate() {
+      if (!(await saveTemplate(false))) return;
+      const res = await fetch('/api/templates/new', {method: 'POST'});
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        alert(data.error || '新建模板失败。');
+        return;
+      }
+      state.activeTemplateId = data.template.id;
+      await refreshState();
+      alert('已新建模板。填写内容后记得保存。');
+    }
+
+    async function deleteTemplate() {
+      if (state.activeTemplateId === '__default') return;
+      const name = $('templateName').value || '当前模板';
+      if (!confirm(`确认删除模板「${name}」吗？`)) return;
+      const res = await fetch('/api/templates/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({templateId: state.activeTemplateId})
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        alert(data.error || '删除模板失败。');
+        return;
+      }
+      state.activeTemplateId = '__default';
+      await refreshState();
+      alert('模板已删除。');
+    }
+
+    function insertTemplateText(text, wrapSelection = false) {
+      const field = $('body');
+      const start = field.selectionStart;
+      const end = field.selectionEnd;
+      const selected = field.value.slice(start, end);
+      const insertion = wrapSelection && selected ? `**${selected}**` : text;
+      field.setRangeText(insertion, start, end, 'select');
+      field.focus();
+    }
+
+    async function saveSettings() {
+      const payload = {
+        fromName: $('fromName').value,
+        fromEmail: $('fromEmail').value,
+        replyTo: $('replyTo').value,
+        smtpHost: $('smtpHost').value,
+        smtpPort: Number($('smtpPort').value || 587),
+        username: $('username').value,
+        useSsl: $('useSsl').checked,
+        dailyLimit: Number($('dailyLimit').value || 0),
+        delaySeconds: Number($('delaySeconds').value || 0)
+      };
+      if ($('password').value) payload.password = $('password').value;
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        alert(data.error || '邮箱设置保存失败。');
+        return;
+      }
+      await refreshState();
+      alert('邮箱设置已保存。');
+    }
+
+    async function importFile() {
+      const file = $('fileInput').files[0];
+      if (!file) {
+        alert('请先选择 CSV、TSV 或 Excel 名单文件。');
+        return;
+      }
+      const bytes = await file.arrayBuffer();
+      const arr = Array.from(new Uint8Array(bytes));
+      const base64 = btoa(String.fromCharCode(...arr));
+      const replace = $('replaceMode').value === 'replace';
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          filename: file.name,
+          contentBase64: base64,
+          replace
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        alert(data.error || '导入失败。');
+        return;
+      }
+      await refreshState();
+      alert(`导入完成：新增 ${data.added ?? 0} 条，更新 ${data.updated ?? 0} 条。`);
+    }
+
+    async function refreshPreview() {
+      const leadId = currentLeadId();
+      if (!leadId) {
+        $('previewSubject').textContent = '';
+        $('previewBody').textContent = '';
+      $('tokenWarn').textContent = '请先导入名单';
+        return;
+      }
+      const res = await fetch('/api/preview', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ leadId })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        $('previewSubject').textContent = data.error || '预览失败';
+        $('previewBody').textContent = '';
+        $('tokenWarn').textContent = data.error || '-';
+        return;
+      }
+      $('previewSubject').textContent = data.subject || '';
+      $('previewBody').textContent = data.body || '';
+      $('tokenWarn').textContent = (data.unresolved && data.unresolved.length)
+        ? `未替换内容：${data.unresolved.join(', ')}`
+        : `模板：${data.templateName || '默认模板'}；检查正常`;
+    }
+
+    async function sendBatch(dryRun, allUnsent) {
+      if (!allUnsent && !state.selected.size) {
+        alert(dryRun ? '请先勾选要检查的红人。' : '请先勾选至少一位红人。');
+        return;
+      }
+      const payload = {
+        leadIds: allUnsent ? [] : Array.from(state.selected),
+        dryRun
+      };
+      if (!dryRun && !confirm(allUnsent
+        ? '确定向所有尚未发送的红人发送邮件吗？'
+        : `确定向已勾选的 ${state.selected.size} 位红人发送邮件吗？`)) return;
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        alert(data.error || '发送操作失败。');
+        return;
+      }
+      await refreshState();
+      alert(`${dryRun ? '检查完成' : '发送完成'}：处理 ${data.results?.length ?? 0} 位红人。`);
+    }
+
+    async function leadAction(action, id) {
+      if (action === 'preview') {
+        state.activeLeadId = id;
+        $('leadSelect').value = id;
+        await refreshPreview();
+        return;
+      }
+      if (action === 'delete') {
+        const lead = state.data?.leads.find(item => item.id === id);
+        if (!confirm(`确认删除红人「${lead?.name || lead?.email || ''}」吗？`)) return;
+        await fetch('/api/lead/delete', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ leadId: id })
+        });
+        state.selected.delete(id);
+        await refreshState();
+        return;
+      }
+      if (action === 'reset') {
+        await fetch('/api/lead/reset', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ leadId: id })
+        });
+        await refreshState();
+      }
+    }
+
+    function toggleVisibleSelection(force) {
+      const leads = visibleLeads();
+      leads.forEach(l => {
+        if (force === true) state.selected.add(l.id);
+        else if (force === false) state.selected.delete(l.id);
+        else {
+          if (state.selected.has(l.id)) state.selected.delete(l.id); else state.selected.add(l.id);
+        }
+      });
+      renderLeads();
+    }
+
+    async function resetSelected() {
+      const ids = Array.from(state.selected);
+      if (!ids.length) {
+        alert('请先勾选要重置的红人。');
+        return;
+      }
+      if (!confirm(`确认将已选中的 ${ids.length} 位红人重置为未发送状态吗？`)) return;
+      for (const leadId of ids) {
+        await fetch('/api/lead/reset', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({leadId})
+        });
+      }
+      await refreshState();
+      alert(`已重置 ${ids.length} 位红人。`);
+    }
+
+    async function deleteSelected() {
+      const ids = Array.from(state.selected);
+      if (!ids.length) {
+        alert('请先勾选要删除的红人。');
+        return;
+      }
+      if (!confirm(`确认删除已选中的 ${ids.length} 位红人吗？此操作无法撤销。`)) return;
+      for (const leadId of ids) {
+        await fetch('/api/lead/delete', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({leadId})
+        });
+      }
+      state.selected.clear();
+      await refreshState();
+      alert(`已删除 ${ids.length} 位红人。`);
+    }
+
+    document.addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab-button');
+      if (tab) {
+        document.querySelectorAll('.tab-button').forEach(button => {
+          button.classList.toggle('active', button === tab);
+          button.setAttribute('aria-selected', button === tab ? 'true' : 'false');
+        });
+        document.querySelectorAll('.tab-page').forEach(page => {
+          const active = page.id === tab.dataset.tab;
+          page.hidden = !active;
+          page.classList.toggle('active', active);
+        });
+      }
+      const btn = e.target.closest('button[data-action]');
+      if (btn) {
+        leadAction(btn.dataset.action, btn.dataset.id);
+      }
+      const row = e.target.closest('tr[data-id]');
+      if (row && !e.target.closest('button') && !e.target.closest('input')) {
+        state.activeLeadId = row.dataset.id;
+        $('leadSelect').value = row.dataset.id;
+        refreshPreview();
+      }
+    });
+
+    $('refreshBtn').addEventListener('click', refreshState);
+    $('saveTemplateBtn').addEventListener('click', saveTemplate);
+    $('newTemplateBtn').addEventListener('click', createTemplate);
+    $('deleteTemplateBtn').addEventListener('click', deleteTemplate);
+    $('boldBtn').addEventListener('click', () => insertTemplateText('', true));
+    $('normalBtn').addEventListener('click', () => {
+      const field = $('body');
+      const start = field.selectionStart;
+      const end = field.selectionEnd;
+      const selected = field.value.slice(start, end).replace(/^\*\*(.*)\*\*$/s, '$1');
+      field.setRangeText(selected, start, end, 'select');
+      field.focus();
+    });
+    $('insertNameBtn').addEventListener('click', () => insertTemplateText('{{name}}'));
+    $('templateSelect').addEventListener('change', async (e) => {
+      const nextId = e.target.value;
+      if (nextId === state.activeTemplateId) return;
+      if (!(await saveTemplate(false))) {
+        $('templateSelect').value = state.activeTemplateId;
+        return;
+      }
+      state.activeTemplateId = nextId;
+      renderTemplate();
+      await refreshPreview();
+    });
+    $('saveSettingsBtn').addEventListener('click', saveSettings);
+    $('importBtn').addEventListener('click', importFile);
+    $('previewBtn').addEventListener('click', refreshPreview);
+    $('dryRunBtn').addEventListener('click', () => sendBatch(true, false));
+    $('sendSelectedBtn').addEventListener('click', () => {
+      if (!state.selected.size) {
+        alert('请先勾选至少一位红人。');
+        return;
+      }
+      sendBatch(false, false);
+    });
+    $('sendAllBtn').addEventListener('click', () => sendBatch(false, true));
+    $('selectUnsentTableBtn').addEventListener('click', () => {
+      visibleLeads().filter(l => l.status !== 'sent').forEach(l => state.selected.add(l.id));
+      renderLeads();
+    });
+    $('selectAllBtn').addEventListener('click', () => toggleVisibleSelection(true));
+    $('resetSelectedBtn').addEventListener('click', resetSelected);
+    $('deleteSelectedBtn').addEventListener('click', deleteSelected);
+    $('filterInput').addEventListener('input', (e) => {
+      state.filter = e.target.value;
+      renderLeads();
+      refreshPreview();
+    });
+    $('leadSelect').addEventListener('change', (e) => {
+      state.activeLeadId = e.target.value;
+      refreshPreview();
+    });
+    $('selectUnsentBtn').addEventListener('click', () => {
+      visibleLeads().filter(l => l.status !== 'sent').forEach(l => state.selected.add(l.id));
+      renderLeads();
+    });
+    $('clearSelBtn').addEventListener('click', () => {
+      state.selected.clear();
+      renderLeads();
+    });
+    $('selectAllVisible').addEventListener('change', (e) => {
+      toggleVisibleSelection(e.target.checked);
+    });
+    document.addEventListener('change', (e) => {
+      const cb = e.target.closest('input.lead-check');
+      if (cb) {
+        if (cb.checked) state.selected.add(cb.dataset.id);
+        else state.selected.delete(cb.dataset.id);
+        $('selectedCount').textContent = `已选择 ${state.selected.size} 个`;
+        const rows = visibleLeads();
+        $('selectAllVisible').checked = rows.length > 0 && rows.every(l => state.selected.has(l.id));
+      }
+    });
+
+    refreshState();
+    setInterval(refreshState, 30000);
+  </script>
+</body>
+</html>
