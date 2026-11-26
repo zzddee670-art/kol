@@ -14,10 +14,6 @@
 
 ## 一、打开
 ### 第 1 步：下载
-让对方打开你的 GitHub 仓库地址：
-
-https://github.com/zzddee670-art/kol
-
 点绿色的 Code 按钮 → Download ZIP ，下载整个压缩包。
 
 ⚠️ 提醒： 必须下载整个 ZIP ，不能只点里面某个文件下载。
