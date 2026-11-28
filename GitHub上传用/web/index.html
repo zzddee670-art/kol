@@ -961,6 +961,7 @@
         if (!validIds.has(id)) state.selected.delete(id);
       }
       renderStats();
+      await saveTemplate(false); 
       renderTemplate();
       renderSettings();
       renderLeads();
