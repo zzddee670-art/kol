@@ -956,13 +956,13 @@
     async function refreshState() {
       const res = await fetch('/api/state');
       state.data = await res.json();
-        const validIds = new Set((state.data?.leads ?? []).map(l => l.id));
+      const validIds = new Set((state.data?.leads ?? []).map(l => l.id));
       for (const id of Array.from(state.selected)) {
         if (!validIds.has(id)) state.selected.delete(id);
       }
       renderStats();
-      await saveTemplate(false); 
       renderTemplate();
+      await saveTemplate(false);
       renderSettings();
       renderLeads();
       renderLogs();
