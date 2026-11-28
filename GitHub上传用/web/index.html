@@ -450,7 +450,7 @@
       padding:14px 10px 10px;
       background:#fff;
       min-height:0;
-      overflow:auto;
+      overflow:visible;
     }
     .group-box>h2{
       position:absolute;
@@ -956,6 +956,10 @@
     async function refreshState() {
       const res = await fetch('/api/state');
       state.data = await res.json();
+        const validIds = new Set((state.data?.leads ?? []).map(l => l.id));
+      for (const id of Array.from(state.selected)) {
+        if (!validIds.has(id)) state.selected.delete(id);
+      }
       renderStats();
       renderTemplate();
       renderSettings();
